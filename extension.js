@@ -136,21 +136,25 @@ async function pairBridge(context) {
 async function connectHue(context) {
   try {
     await getBridge();
+    if (!configuration.bridgeIp) {
+      configuration.bridgeIp = await vscode.window.showInputBox();
+    }
+    try {
+      await pairBridge(context);
+      if (!configuration.selectedLightGroup) {
+        await selectLightGroupCommand();
+        try {
+          await enableCommand();
+        } catch (error) {
+          throw error;
+        }
+      }
+    } catch (error) {
+      throw error;
+    }
   } catch (error) {
     throw error;
   }
-
-  try {
-    await pairBridge(context);
-  } catch (error) {
-    throw error;
-  }
-
-  if (!configuration.selectedLightGroup) {
-    await selectLightGroupCommand();
-  }
-
-  await enableCommand();
 }
 
 function connectHueCommand(context) {

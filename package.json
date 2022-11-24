@@ -86,7 +86,7 @@
         "@types/node": "^8.10.25",
         "eslint": "5.14.0",
         "eslint-config-airbnb": "17.1.0",
-        "eslint-config-mdb": "0.1.1",
+        "@matthewbill/eslint-config-mdb": "0.1.5",
         "eslint-plugin-import": "2.14.0",
         "eslint-plugin-jsx-a11y": "6.1.1",
         "eslint-plugin-react": "7.11.1",
