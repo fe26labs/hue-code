@@ -1,3 +1,3 @@
 module.exports = {
-    "extends": "eslint-config-mdb"
+    "extends": "@matthewbill/eslint-config-mdb"
 };

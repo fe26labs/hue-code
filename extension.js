@@ -43,9 +43,12 @@ async function selectLightGroupCommand() {
   const items = global.groups.map(group => group.name);
   try {
     const result = await vscode.window.showQuickPick(items, { placeHolder: 'Select the light group you wish to enable.' });
-    configuration.selectedLightGroup = result;
-    await enableCommand();
-    return result;
+    if (result) {
+      configuration.selectedLightGroup = result;
+      await enableCommand();
+      return result;
+    }
+    return configuration.selectedLightGroup;
   } catch (error) {
     throw error;
   }
@@ -63,22 +66,38 @@ function selectBridge() {
   }
 }
 
+// Attempts to get the bridges on the network by the hue discovery service
 async function getBridges() {
   global.bridges = await hueBridgesRepository.getHueBridges();
-  // refresh the bridge provider
 }
 
+// Prompts the user to enter the ip for the hue bridge manually.
+async function getManualBridgeIP(message) {
+  const result = await vscode.window.showInputBox({ title: 'Please enter your Hue Bridge IP', prompt: message });
+  if (result) {
+    return result;
+  }
+  throw new Error('IP address for Hue Bridge not entered');
+}
+
+// Method attempts to get the bridge via the hue discovery service or asks the user to get it manually
 async function getBridge() {
   try {
-    await getBridges();
+    try {
+      await getBridges();
+    } catch (error) {
+      configuration.bridgeIp = await getManualBridgeIP('There was a problem contacting the Hue discovery service.');
+      return;
+    }
     if (global.bridges && global.bridges.length > 0) {
       if (global.bridges.length > 1) {
         configuration.bridgeIp = await selectBridge();
       } else {
         configuration.bridgeIp = global.bridges[0].internalipaddress;
       }
+    } else {
+      configuration.bridgeIp = await getManualBridgeIP('No Hue Bridge was detected. This may be because you are connected to a VPN.');
     }
-    // get the user
   } catch (error) {
     throw error;
   }
@@ -103,16 +122,21 @@ async function pollUser(context, progress) {
   return null;
 }
 
+function paringCancelled() {
+  vscode.window.showInformationMessage('Cancelled Hue Bridge Pairing.');
+  disconnect();
+}
+
 async function pairBridge(context) {
   try {
     const progressOptions = {
       location: vscode.ProgressLocation.Notification,
-      title: 'Paring with Hue Bridge',
+      title: `Paring with Hue Bridge (${context.bridgeIp})`,
       cancellable: true,
     };
     const userId = await vscode.window.withProgress(progressOptions, (progress, token) => {
       token.onCancellationRequested(() => {
-        vscode.window.showInformationMessage('Cancelled Hue Bridge Pairing.');
+        paringCancelled();
       });
 
       progress.report({ increment: 0, message: 'Press the link button on the top of your Hue Bridge' });
@@ -136,21 +160,22 @@ async function pairBridge(context) {
 async function connectHue(context) {
   try {
     await getBridge();
+    try {
+      await pairBridge(context);
+      if (!configuration.selectedLightGroup) {
+        await selectLightGroupCommand();
+        try {
+          await enableCommand();
+        } catch (error) {
+          throw error;
+        }
+      }
+    } catch (error) {
+      throw error;
+    }
   } catch (error) {
     throw error;
   }
-
-  try {
-    await pairBridge(context);
-  } catch (error) {
-    throw error;
-  }
-
-  if (!configuration.selectedLightGroup) {
-    await selectLightGroupCommand();
-  }
-
-  await enableCommand();
 }
 
 function connectHueCommand(context) {
@@ -158,7 +183,7 @@ function connectHueCommand(context) {
     vscode.window.showInformationMessage('Bridge Paired');
   }).catch((reason) => {
     console.error(reason);
-    vscode.window.showErrorMessage('Error Connecting to Bridge');
+    vscode.window.showErrorMessage(`Error Connecting to Bridge\n${reason}`);
   });
 }
 
@@ -229,11 +254,16 @@ function displayMenuCommand(context) {
 }
 
 function disconnect() {
+  const wasConnected = global.connected;
   global.enabled = false;
   global.connected = false;
+  configuration.bridgeIp = undefined;
   vscode.window.showInformationMessage('Hue Bridge Disconnected.');
-  hueService.doubleFlash(getSelectGroupLightIds(), 'red');
   refreshStateBarText();
+  if (wasConnected) {
+    // Silently error if cannot connect to hue hub
+    hueService.doubleFlash(getSelectGroupLightIds(), 'red');
+  }
 }
 
 function registerCommands(context) {
@@ -251,15 +281,12 @@ function getSelectGroupLightIds() {
 }
 
 function registerActivies() {
-
   vscode.window.onDidChangeActiveTextEditor(() => { if (global.enabled) { hueService.flash(getSelectGroupLightIds(), 'white'); } });
-
   vscode.debug.onDidStartDebugSession(() => {
     if (global.enabled) {
       hueService.processStart(getSelectGroupLightIds(), 'red');
     }
   });
-
   vscode.debug.onDidTerminateDebugSession(() => { if (global.enabled) { hueService.processEnd(getSelectGroupLightIds()); } });
   vscode.debug.onDidChangeBreakpoints(() => { if (global.enabled) { hueService.flash(getSelectGroupLightIds(), 'blue'); } });
   vscode.window.onDidOpenTerminal(() => { if (global.enabled) { hueService.flash(getSelectGroupLightIds(), 'green'); } });
@@ -293,25 +320,24 @@ function registerStatusBar() {
 
 
 async function loadHueResources() {
-  getBridges();
-  global.lights = await hueLightsRepository.getLights();
-  global.sensors = await hueSensorsRepository.getSensors();
-
-  global.groups = await hueGroupsRepository.getGroups();
-  
-  if (configuration.selectedLightGroup) {
-    if (!getSelectedGroup()) {
-      configuration.selectedLightGroup = null;
-      global.enabled = false;
-      vscode.window.showErrorMessage('Selected light group not available.');
+  if (global.connected) {
+    global.lights = await hueLightsRepository.getLights();
+    global.sensors = await hueSensorsRepository.getSensors();
+    global.groups = await hueGroupsRepository.getGroups();
+    if (configuration.selectedLightGroup) {
+      if (!getSelectedGroup()) {
+        configuration.selectedLightGroup = null;
+        global.enabled = false;
+        vscode.window.showErrorMessage('Selected light group not available.');
+      }
     }
-  }
 
-  // Refresh providers
-  hueGroupsProvider.refresh();
-  hueLightsProvider.refresh();
-  hueBridgesProvider.refresh();
-  hueSensorsProvider.refresh();
+    // Refresh providers
+    hueGroupsProvider.refresh();
+    hueLightsProvider.refresh();
+    hueBridgesProvider.refresh();
+    hueSensorsProvider.refresh();
+  }
 }
 
 async function testConnection() {
@@ -351,7 +377,7 @@ async function activate(context) {
   registerCommands(context);
   registerStatusBar();
 
-  setInterval(loadHueResources, 30000);
+  // setInterval(loadHueResources, 30000);
 
   // context.subscriptions.push(items to dispose when deactivated);
 }
