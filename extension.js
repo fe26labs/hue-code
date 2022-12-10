@@ -43,9 +43,12 @@ async function selectLightGroupCommand() {
   const items = global.groups.map(group => group.name);
   try {
     const result = await vscode.window.showQuickPick(items, { placeHolder: 'Select the light group you wish to enable.' });
-    configuration.selectedLightGroup = result;
-    await enableCommand();
-    return result;
+    if (result) {
+      configuration.selectedLightGroup = result;
+      await enableCommand();
+      return result;
+    }
+    return configuration.selectedLightGroup;
   } catch (error) {
     throw error;
   }
@@ -268,15 +271,12 @@ function getSelectGroupLightIds() {
 }
 
 function registerActivies() {
-
   vscode.window.onDidChangeActiveTextEditor(() => { if (global.enabled) { hueService.flash(getSelectGroupLightIds(), 'white'); } });
-
   vscode.debug.onDidStartDebugSession(() => {
     if (global.enabled) {
       hueService.processStart(getSelectGroupLightIds(), 'red');
     }
   });
-
   vscode.debug.onDidTerminateDebugSession(() => { if (global.enabled) { hueService.processEnd(getSelectGroupLightIds()); } });
   vscode.debug.onDidChangeBreakpoints(() => { if (global.enabled) { hueService.flash(getSelectGroupLightIds(), 'blue'); } });
   vscode.window.onDidOpenTerminal(() => { if (global.enabled) { hueService.flash(getSelectGroupLightIds(), 'green'); } });
@@ -310,25 +310,24 @@ function registerStatusBar() {
 
 
 async function loadHueResources() {
-  getBridges();
-  global.lights = await hueLightsRepository.getLights();
-  global.sensors = await hueSensorsRepository.getSensors();
-
-  global.groups = await hueGroupsRepository.getGroups();
-  
-  if (configuration.selectedLightGroup) {
-    if (!getSelectedGroup()) {
-      configuration.selectedLightGroup = null;
-      global.enabled = false;
-      vscode.window.showErrorMessage('Selected light group not available.');
+  if (global.connected) {
+    global.lights = await hueLightsRepository.getLights();
+    global.sensors = await hueSensorsRepository.getSensors();
+    global.groups = await hueGroupsRepository.getGroups();
+    if (configuration.selectedLightGroup) {
+      if (!getSelectedGroup()) {
+        configuration.selectedLightGroup = null;
+        global.enabled = false;
+        vscode.window.showErrorMessage('Selected light group not available.');
+      }
     }
-  }
 
-  // Refresh providers
-  hueGroupsProvider.refresh();
-  hueLightsProvider.refresh();
-  hueBridgesProvider.refresh();
-  hueSensorsProvider.refresh();
+    // Refresh providers
+    hueGroupsProvider.refresh();
+    hueLightsProvider.refresh();
+    hueBridgesProvider.refresh();
+    hueSensorsProvider.refresh();
+  }
 }
 
 async function testConnection() {
