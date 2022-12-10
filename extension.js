@@ -63,22 +63,38 @@ function selectBridge() {
   }
 }
 
+// Attempts to get the bridges on the network by the hue discovery service
 async function getBridges() {
   global.bridges = await hueBridgesRepository.getHueBridges();
-  // refresh the bridge provider
 }
 
+// Prompts the user to enter the ip for the hue bridge manually.
+async function getManualBridgeIP(message) {
+  const result = await vscode.window.showInputBox({ title: 'Please enter your Hue Bridge IP', prompt: message });
+  if (result) {
+    return result;
+  }
+  throw new Error('IP address for Hue Bridge not entered');
+}
+
+// Method attempts to get the bridge via the hue discovery service or asks the user to get it manually
 async function getBridge() {
   try {
-    await getBridges();
+    try {
+      await getBridges();
+    } catch (error) {
+      configuration.bridgeIp = await getManualBridgeIP('There was a problem contacting the Hue discovery service.');
+      return;
+    }
     if (global.bridges && global.bridges.length > 0) {
       if (global.bridges.length > 1) {
         configuration.bridgeIp = await selectBridge();
       } else {
         configuration.bridgeIp = global.bridges[0].internalipaddress;
       }
+    } else {
+      configuration.bridgeIp = await getManualBridgeIP('No Hue Bridge was detected. This may be because you are connected to a VPN.');
     }
-    // get the user
   } catch (error) {
     throw error;
   }
@@ -136,9 +152,6 @@ async function pairBridge(context) {
 async function connectHue(context) {
   try {
     await getBridge();
-    if (!configuration.bridgeIp) {
-      configuration.bridgeIp = await vscode.window.showInputBox();
-    }
     try {
       await pairBridge(context);
       if (!configuration.selectedLightGroup) {
@@ -162,7 +175,7 @@ function connectHueCommand(context) {
     vscode.window.showInformationMessage('Bridge Paired');
   }).catch((reason) => {
     console.error(reason);
-    vscode.window.showErrorMessage('Error Connecting to Bridge');
+    vscode.window.showErrorMessage(`Error Connecting to Bridge\n${reason}`);
   });
 }
 
@@ -355,7 +368,7 @@ async function activate(context) {
   registerCommands(context);
   registerStatusBar();
 
-  setInterval(loadHueResources, 30000);
+  // setInterval(loadHueResources, 30000);
 
   // context.subscriptions.push(items to dispose when deactivated);
 }
