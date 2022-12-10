@@ -122,16 +122,21 @@ async function pollUser(context, progress) {
   return null;
 }
 
+function paringCancelled() {
+  vscode.window.showInformationMessage('Cancelled Hue Bridge Pairing.');
+  disconnect();
+}
+
 async function pairBridge(context) {
   try {
     const progressOptions = {
       location: vscode.ProgressLocation.Notification,
-      title: 'Paring with Hue Bridge',
+      title: `Paring with Hue Bridge (${context.bridgeIp})`,
       cancellable: true,
     };
     const userId = await vscode.window.withProgress(progressOptions, (progress, token) => {
       token.onCancellationRequested(() => {
-        vscode.window.showInformationMessage('Cancelled Hue Bridge Pairing.');
+        paringCancelled();
       });
 
       progress.report({ increment: 0, message: 'Press the link button on the top of your Hue Bridge' });
@@ -249,11 +254,16 @@ function displayMenuCommand(context) {
 }
 
 function disconnect() {
+  const wasConnected = global.connected;
   global.enabled = false;
   global.connected = false;
+  configuration.bridgeIp = undefined;
   vscode.window.showInformationMessage('Hue Bridge Disconnected.');
-  hueService.doubleFlash(getSelectGroupLightIds(), 'red');
   refreshStateBarText();
+  if (wasConnected) {
+    // Silently error if cannot connect to hue hub
+    hueService.doubleFlash(getSelectGroupLightIds(), 'red');
+  }
 }
 
 function registerCommands(context) {
