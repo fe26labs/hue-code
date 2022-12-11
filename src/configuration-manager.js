@@ -1,5 +1,4 @@
 class ConfigurationManager {
-
   get userId() { return this.context.globalState.get('userId'); }
 
   set userId(value) { this.context.globalState.update('userId', value); }

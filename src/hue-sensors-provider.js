@@ -1,3 +1,4 @@
+/* eslint-disable class-methods-use-this */
 
 const vscode = require('vscode');
 
@@ -19,7 +20,6 @@ class HueSensorsProvider {
   }
 
   async getChildren() {
-    const self = this;
     let items = [];
     try {
       items = global.sensors.map((sensor) => {
@@ -27,7 +27,10 @@ class HueSensorsProvider {
         if (sensor.type === 'ZLLTemperature') {
           sensorName = `${sensorName} (${sensor.state.temperature / 100})`;
         }
-        const treeItem = new vscode.TreeItem(sensorName, vscode.TreeItemCollapsibleState.None);
+        const treeItem = new vscode.TreeItem(
+          sensorName,
+          vscode.TreeItemCollapsibleState.None,
+        );
         return treeItem;
       });
     } catch (error) {
