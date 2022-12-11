@@ -1,3 +1,4 @@
+/* eslint-disable class-methods-use-this */
 
 const vscode = require('vscode');
 
@@ -19,11 +20,13 @@ class HueLightsProvider {
   }
 
   async getChildren() {
-    const self = this;
     let items = [];
     try {
       items = global.lights.map((light) => {
-        const treeItem = new vscode.TreeItem(light.name, vscode.TreeItemCollapsibleState.None);
+        const treeItem = new vscode.TreeItem(
+          light.name,
+          vscode.TreeItemCollapsibleState.None,
+        );
         treeItem.id = light.id;
         treeItem.tooltip = light.id;
         treeItem.description = light.type;

@@ -2,7 +2,6 @@
 const axios = require('axios');
 
 class HueUserRepository {
-
   static get LINK_BUTTON_NOT_PRESSED_ERROR_CODE() { return 'link-button-not-pressed'; }
 
   constructor(configuration) {

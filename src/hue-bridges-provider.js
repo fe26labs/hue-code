@@ -1,8 +1,8 @@
+/* eslint-disable class-methods-use-this */
 
 const vscode = require('vscode');
 
 class HueBridgesProvider {
-
   constructor(bridges) {
     const self = this;
     self.bridges = bridges;
@@ -20,11 +20,13 @@ class HueBridgesProvider {
   }
 
   async getChildren() {
-    const self = this;
     let items = [];
     try {
       items = global.bridges.map((bridge) => {
-        const treeItem = new vscode.TreeItem(bridge.id, vscode.TreeItemCollapsibleState.None);
+        const treeItem = new vscode.TreeItem(
+          bridge.id,
+          vscode.TreeItemCollapsibleState.None,
+        );
         treeItem.id = bridge.internalipaddress;
         treeItem.description = bridge.internalipaddress;
         return treeItem;

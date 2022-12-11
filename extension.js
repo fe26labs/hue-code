@@ -1,3 +1,5 @@
+/* eslint-disable max-len */
+/* eslint-disable no-await-in-loop */
 // The module 'vscode' contains the VS Code extensibility API
 // Import the module and reference it with the alias vscode in your code below
 const vscode = require('vscode');
@@ -19,7 +21,9 @@ global.lights = [];
 global.groups = [];
 global.sensors = [];
 
-const statusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left);
+const statusBarItem = vscode.window.createStatusBarItem(
+  vscode.StatusBarAlignment.Left,
+);
 
 const configuration = new ConfigurationManager(null);
 const hueGroupsRepository = new HueGroupsRepository(configuration);
@@ -37,21 +41,6 @@ const hueService = new HueService(hueLightsRepository);
 
 function sleep(milliseconds) {
   return new Promise(resolve => setTimeout(resolve, milliseconds));
-}
-
-async function selectLightGroupCommand() {
-  const items = global.groups.map(group => group.name);
-  try {
-    const result = await vscode.window.showQuickPick(items, { placeHolder: 'Select the light group you wish to enable.' });
-    if (result) {
-      configuration.selectedLightGroup = result;
-      await enableCommand();
-      return result;
-    }
-    return configuration.selectedLightGroup;
-  } catch (error) {
-    throw error;
-  }
 }
 
 function selectBridge() {
@@ -122,156 +111,10 @@ async function pollUser(context, progress) {
   return null;
 }
 
-function paringCancelled() {
-  vscode.window.showInformationMessage('Cancelled Hue Bridge Pairing.');
-  disconnect();
-}
-
-async function pairBridge(context) {
-  try {
-    const progressOptions = {
-      location: vscode.ProgressLocation.Notification,
-      title: `Paring with Hue Bridge (${context.bridgeIp})`,
-      cancellable: true,
-    };
-    const userId = await vscode.window.withProgress(progressOptions, (progress, token) => {
-      token.onCancellationRequested(() => {
-        paringCancelled();
-      });
-
-      progress.report({ increment: 0, message: 'Press the link button on the top of your Hue Bridge' });
-
-      return new Promise((resolve) => {
-        pollUser(context, progress).then((result) => {
-          global.connected = true;
-          resolve(result);
-        }).catch((reason) => {
-          global.connected = false;
-          throw reason;
-        });
-      });
-    });
-    return userId;
-  } catch (error) {
-    throw error;
-  }
-}
-
-async function connectHue(context) {
-  try {
-    await getBridge();
-    try {
-      await pairBridge(context);
-      if (!configuration.selectedLightGroup) {
-        await selectLightGroupCommand();
-        try {
-          await enableCommand();
-        } catch (error) {
-          throw error;
-        }
-      }
-    } catch (error) {
-      throw error;
-    }
-  } catch (error) {
-    throw error;
-  }
-}
-
-function connectHueCommand(context) {
-  connectHue(context).then(() => {
-    vscode.window.showInformationMessage('Bridge Paired');
-  }).catch((reason) => {
-    console.error(reason);
-    vscode.window.showErrorMessage(`Error Connecting to Bridge\n${reason}`);
-  });
-}
-
-async function enableCommand() {
-  try {
-    await testConnection();
-    global.enabled = true;
-    refreshStateBarText();
-  } catch (error) {
-    global.enabled = false;
-    refreshStateBarText();
-    console.error(error);
-    throw error;
-  }
-}
-
-function disableCommand() {
-  global.enabled = false;
-  hueService.doubleFlash(getSelectGroupLightIds(), 'red');
-  refreshStateBarText();
-}
-
-function displayMenuCommand(context) {
-  const quickPickItems = [];
-  const disconnectLabel = '$(circle-slash) Disconnect';
-  const disableLabel = '$(eye-closed) Disable';
-  const enableLabel = '$(eye) Enable';
-  const connectLabel = '$(plug) Connect';
-  const selectLightGroupLabel = '$(settings) Select Light Group';
-  if (global.connected) {
-    quickPickItems.push({ label: disconnectLabel, description: `Disconnect from your Hue Bridge (${configuration.bridgeIp})` });
-    if (configuration.selectedLightGroup) {
-      if (global.enabled) {
-        quickPickItems.push({ label: disableLabel, description: 'Disable Hue Code' });
-      } else {
-        quickPickItems.push({ label: enableLabel, description: 'Enable Hue Code' });
-      }
-    }
-    let selectLightGroupDescription = 'To get started, select a light group.';
-    if (configuration.selectedLightGroup) {
-      selectLightGroupDescription = `${configuration.selectedLightGroup}, currently selected`;
-    }
-    quickPickItems.push({ label: selectLightGroupLabel, description: selectLightGroupDescription });
-  } else {
-    quickPickItems.push({ label: connectLabel, description: 'Connect to your Hue Bridge' });
-  }
-  vscode.window.showQuickPick(quickPickItems, { placeHolder: 'Select what you want to do' }).then((command) => {
-    switch (command.label) {
-      case disconnectLabel:
-        disconnect();
-        break;
-      case connectLabel:
-        connectHueCommand(context);
-        break;
-      case enableLabel:
-        enableCommand();
-        break;
-      case disableLabel:
-        disableCommand();
-        break;
-      case selectLightGroupLabel:
-        selectLightGroupCommand();
-        break;
-      default:
-        break;
-    }
-  });
-}
-
-function disconnect() {
-  const wasConnected = global.connected;
-  global.enabled = false;
-  global.connected = false;
-  configuration.bridgeIp = undefined;
-  vscode.window.showInformationMessage('Hue Bridge Disconnected.');
-  refreshStateBarText();
-  if (wasConnected) {
-    // Silently error if cannot connect to hue hub
-    hueService.doubleFlash(getSelectGroupLightIds(), 'red');
-  }
-}
-
-function registerCommands(context) {
-  context.subscriptions.push(vscode.commands.registerCommand('huecode.displayMenu', () => displayMenuCommand(configuration, context)));
-}
-
 function getSelectedGroup() {
-  const selectedGroup = global.groups.find(group => group.name === configuration.selectedLightGroup);
+  const selectedGroup = global.groups.find(
+    group => group.name === configuration.selectedLightGroup,
+  );
   return selectedGroup;
 }
 
@@ -355,6 +198,167 @@ async function testConnection() {
     }
   }
   refreshStateBarText();
+}
+
+function disconnect() {
+  const wasConnected = global.connected;
+  global.enabled = false;
+  global.connected = false;
+  configuration.bridgeIp = undefined;
+  vscode.window.showInformationMessage('Hue Bridge Disconnected.');
+  refreshStateBarText();
+  if (wasConnected) {
+    // Silently error if cannot connect to hue hub
+    hueService.doubleFlash(getSelectGroupLightIds(), 'red');
+  }
+}
+
+function paringCancelled() {
+  vscode.window.showInformationMessage('Cancelled Hue Bridge Pairing.');
+  disconnect();
+}
+
+async function pairBridge(context) {
+  try {
+    const progressOptions = {
+      location: vscode.ProgressLocation.Notification,
+      title: `Paring with Hue Bridge (${context.bridgeIp})`,
+      cancellable: true,
+    };
+    const userId = await vscode.window.withProgress(progressOptions, (progress, token) => {
+      token.onCancellationRequested(() => {
+        paringCancelled();
+      });
+
+      progress.report({ increment: 0, message: 'Press the link button on the top of your Hue Bridge' });
+
+      return new Promise((resolve) => {
+        pollUser(context, progress).then((result) => {
+          global.connected = true;
+          resolve(result);
+        }).catch((reason) => {
+          global.connected = false;
+          throw reason;
+        });
+      });
+    });
+    return userId;
+  } catch (error) {
+    throw error;
+  }
+}
+
+async function enableCommand() {
+  try {
+    await testConnection();
+    global.enabled = true;
+    refreshStateBarText();
+  } catch (error) {
+    global.enabled = false;
+    refreshStateBarText();
+    throw error;
+  }
+}
+
+function disableCommand() {
+  global.enabled = false;
+  hueService.doubleFlash(getSelectGroupLightIds(), 'red');
+  refreshStateBarText();
+}
+
+async function selectLightGroupCommand() {
+  const items = global.groups.map(group => group.name);
+  try {
+    const result = await vscode.window.showQuickPick(items, { placeHolder: 'Select the light group you wish to enable.' });
+    if (result) {
+      configuration.selectedLightGroup = result;
+      await enableCommand();
+      return result;
+    }
+    return configuration.selectedLightGroup;
+  } catch (error) {
+    throw error;
+  }
+}
+
+async function connectHue(context) {
+  try {
+    await getBridge();
+    try {
+      await pairBridge(context);
+      if (!configuration.selectedLightGroup) {
+        await selectLightGroupCommand();
+        try {
+          await enableCommand();
+        } catch (error) {
+          throw error;
+        }
+      }
+    } catch (error) {
+      throw error;
+    }
+  } catch (error) {
+    throw error;
+  }
+}
+
+function connectHueCommand(context) {
+  connectHue(context).then(() => {
+    vscode.window.showInformationMessage('Bridge Paired');
+  }).catch((reason) => {
+    vscode.window.showErrorMessage(`Error Connecting to Bridge\n${reason}`);
+  });
+}
+
+function displayMenuCommand(context) {
+  const quickPickItems = [];
+  const disconnectLabel = '$(circle-slash) Disconnect';
+  const disableLabel = '$(eye-closed) Disable';
+  const enableLabel = '$(eye) Enable';
+  const connectLabel = '$(plug) Connect';
+  const selectLightGroupLabel = '$(settings) Select Light Group';
+  if (global.connected) {
+    quickPickItems.push({ label: disconnectLabel, description: `Disconnect from your Hue Bridge (${configuration.bridgeIp})` });
+    if (configuration.selectedLightGroup) {
+      if (global.enabled) {
+        quickPickItems.push({ label: disableLabel, description: 'Disable Hue Code' });
+      } else {
+        quickPickItems.push({ label: enableLabel, description: 'Enable Hue Code' });
+      }
+    }
+    let selectLightGroupDescription = 'To get started, select a light group.';
+    if (configuration.selectedLightGroup) {
+      selectLightGroupDescription = `${configuration.selectedLightGroup}, currently selected`;
+    }
+    quickPickItems.push({ label: selectLightGroupLabel, description: selectLightGroupDescription });
+  } else {
+    quickPickItems.push({ label: connectLabel, description: 'Connect to your Hue Bridge' });
+  }
+  vscode.window.showQuickPick(quickPickItems, { placeHolder: 'Select what you want to do' }).then((command) => {
+    switch (command.label) {
+      case disconnectLabel:
+        disconnect();
+        break;
+      case connectLabel:
+        connectHueCommand(context);
+        break;
+      case enableLabel:
+        enableCommand();
+        break;
+      case disableLabel:
+        disableCommand();
+        break;
+      case selectLightGroupLabel:
+        selectLightGroupCommand();
+        break;
+      default:
+        break;
+    }
+  });
+}
+
+function registerCommands(context) {
+  context.subscriptions.push(vscode.commands.registerCommand('huecode.displayMenu', () => displayMenuCommand(configuration, context)));
 }
 
 // this method is called when your extension is activated

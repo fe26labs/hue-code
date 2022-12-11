@@ -1,3 +1,4 @@
+/* eslint-disable no-await-in-loop */
 class HueService {
   constructor(hueLightsRepository) {
     const self = this;
@@ -43,7 +44,6 @@ class HueService {
 
   async flash(lights, colour) {
     const self = this;
-    
     const state = {
       on: true,
       sat: 254,

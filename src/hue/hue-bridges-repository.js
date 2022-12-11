@@ -13,7 +13,6 @@ class HueBridgeRepository {
       throw new Error(error);
     }
   }
-
 }
 
 module.exports = HueBridgeRepository;
