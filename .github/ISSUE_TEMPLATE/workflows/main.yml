@@ -1,0 +1,51 @@
+name: Main
+
+on: push
+
+env:
+  REGISTRY: ghcr.io
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      packages: write
+    steps:
+    - uses: actions/checkout@v3
+    - uses: actions/setup-node@v3
+      with:
+        node-version: 18
+        cache: 'npm'
+    - run: echo "@matthewbill:registry=https://npm.pkg.github.com" >> .npmrc
+    - run: echo "//npm.pkg.github.com/:_authToken=${{ secrets.GITHUB_TOKEN }}" >> .npmrc
+    - run: echo "always-auth=true" >> .npmrc
+    # Ensure .npmrc file created correctly.
+    - run: cat .npmrc
+    - run: npm ci --ignore-scripts
+    # Run Tests
+    # - run: npm test
+    # Run Linting
+    # = run: npm run lint
+    # Run JsDoc
+    # - run: npm run docs
+    # Setup Git
+    - run: git config user.name "GitHub Actions"
+    - run: git config user.email "actions@github.com"
+    # Version
+    - run: npm version patch --git-tag-version false # git-tag-version is false to stop automatic commit without [skip ci] message to stop inifinite build loop
+    - name: get-npm-version
+      id: package-version
+      uses: martinbeentjes/npm-get-version-action@main
+    - run: echo ${{ steps.package-version.outputs.current-version}}
+    - run: git add package.json
+    - run: git commit -m "[skip ci]"
+
+    # Build Artefacts
+
+    # Push Artefacts
+
+    # Commit Version
+    - run: git push
+    - run: git tag ${{ steps.package-version.outputs.current-version}}
+    - run: git push --tags
