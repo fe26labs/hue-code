@@ -1,3 +1,4 @@
+/* eslint-disable import/no-unresolved */
 //
 // PLEASE DO NOT MODIFY / DELETE UNLESS YOU KNOW WHAT YOU ARE DOING
 //

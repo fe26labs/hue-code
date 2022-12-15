@@ -26,7 +26,7 @@ jobs:
     # Run Tests
     # - run: npm test
     # Run Linting
-    # = run: npm run lint
+    - run: npm run lint
     # Run JsDoc
     # - run: npm run docs
     # Setup Git

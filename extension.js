@@ -1,3 +1,4 @@
+/* eslint-disable import/no-unresolved */
 /* eslint-disable max-len */
 /* eslint-disable no-await-in-loop */
 // The module 'vscode' contains the VS Code extensibility API
