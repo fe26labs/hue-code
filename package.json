@@ -79,10 +79,12 @@
     },
     "scripts": {
         "lint": "eslint .",
+        "docs": "jsdoc ./src -r -d ./docs/api --verbose",
         "test": "node ./node_modules/vscode/bin/test"
     },
     "devDependencies": {
-        "@matthewbill/eslint-config-mdb": "0.1.8"
+        "@matthewbill/eslint-config-mdb": "0.1.8",
+        "jsdoc": "4.0.0"
     },
     "dependencies": {
         "@types/vscode": "1.74.0",

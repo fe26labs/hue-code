@@ -1,7 +1,12 @@
 /* eslint-disable class-methods-use-this */
 const axios = require('axios');
 
+
 class HueLightsRepository {
+  /**
+   * @constructor
+   * @param {*} configuration  - configuration settings for the reponsitory.
+   */
   constructor(configuration) {
     const self = this;
     self.configuration = configuration;
@@ -18,6 +23,10 @@ class HueLightsRepository {
     }
   }
 
+  /**
+   * Gets a list of hue lights.
+   * @returns a list of hue lights.
+   */
   async getLights() {
     const self = this;
     const url = `http://${self.configuration.bridgeIp}/api/${self.configuration.userId}/lights`;
