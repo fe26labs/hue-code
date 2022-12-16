@@ -1,6 +1,9 @@
 name: Main
 
-on: push
+on:
+  push:
+    branches:
+      - master
 
 env:
   REGISTRY: ghcr.io
@@ -28,7 +31,7 @@ jobs:
     # Run Linting
     - run: npm run lint
     # Run JsDoc
-    # - run: npm run docs
+    - run: npm run docs
     # Setup Git
     - run: git config user.name "GitHub Actions"
     - run: git config user.email "actions@github.com"
