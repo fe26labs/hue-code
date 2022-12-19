@@ -45,8 +45,12 @@ jobs:
     - run: git commit -m "[skip ci]"
 
     # Build Artefacts
+    - run: npm install @vscode/vsce -g
+    - run: vsce package
 
     # Push Artefacts
+    # Push to VSCE
+    - run: vsce publish -p ${{ secrets.AZURE_TOKEN }}
 
     # Commit Version
     - run: git push
