@@ -1,7 +1,14 @@
+.github/**
 .vscode/**
 .vscode-test/**
+.archive/**
 test/**
+.eslintignore
+.eslintrc.js
+.gitattributes
 .gitignore
+.npmrc
+CHANGELOG.md
+CONTRIBUTING.md
 jsconfig.json
-vsc-extension-quickstart.md
-.eslintrc.json
+LICENSE

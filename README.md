@@ -5,7 +5,7 @@
 ![GitHub](https://img.shields.io/github/license/mashape/apistatus.svg) 
 [![GitHub issues](https://img.shields.io/github/issues/matthewbill/hue-code/shields.svg)](https://github.com/matthewbill/hue-code/issues)
  ![Travis (.org)](https://img.shields.io/travis/matthewbill/hue-code.svg)
- ![Installs](https://img.shields.io/visual-studio-marketplace/azure-devops/installs/total/fe26labs.hue-code.svg)
+ ![Installs](https://img.shields.io/visual-studio-marketplace/azure-devops/installs/total/matthewbill.hue-code.svg)
 
 Make your [Hue smart lights](https://amzn.to/2MC3RVD) come to life as you code! Your room will pulse as you enter debug mode; as you switch text files your room will flash. With Hue Code, you will feel like you are in a Hollywood hacking movie writing an epic multi-headed hydra virus! It also happens to have some great features for exploring your hue network.
 
