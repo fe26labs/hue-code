@@ -1,4 +1,3 @@
-/* eslint-disable import/no-unresolved */
 /* eslint-disable max-len */
 /* eslint-disable no-await-in-loop */
 // The module 'vscode' contains the VS Code extensibility API
@@ -223,7 +222,7 @@ async function pairBridge(context) {
   try {
     const progressOptions = {
       location: vscode.ProgressLocation.Notification,
-      title: `Paring with Hue Bridge (${context.bridgeIp})`,
+      title: `Pairing with Hue Bridge (${configuration.bridgeIp})`,
       cancellable: true,
     };
     const userId = await vscode.window.withProgress(progressOptions, (progress, token) => {
@@ -359,7 +358,7 @@ function displayMenuCommand(context) {
 }
 
 function registerCommands(context) {
-  context.subscriptions.push(vscode.commands.registerCommand('huecode.displayMenu', () => displayMenuCommand(configuration, context)));
+  context.subscriptions.push(vscode.commands.registerCommand('huecode.displayMenu', () => displayMenuCommand(context)));
 }
 
 // this method is called when your extension is activated
@@ -382,7 +381,7 @@ async function activate(context) {
   registerCommands(context);
   registerStatusBar();
 
-  // setInterval(loadHueResources, 30000);
+  setInterval(loadHueResources, 30000);
 
   // context.subscriptions.push(items to dispose when deactivated);
 }
